@@ -1,5 +1,8 @@
+from typing import Any
 import numpy as np
 from scipy.stats import pearsonr
+import pandas as pd
+import dask.dataframe as dd
 class StatHandler:
     def __init__(self):
         pass
@@ -30,9 +33,18 @@ class StatHandler:
         for i in range(flattened_data.shape[1]):
             correlations[i] = np.corrcoef(voxel_time_series, flattened_data[:, i])[0, 1]
         return correlations
-    def calculate_pearson_corr(self, corr1, corr2):
+    def calculate_distance(self,corr1, corr2):
         p_corr, _ = pearsonr(corr1, corr2)
-        return p_corr
-    def calculate_distance(self,p_corr):
+        distance = np.sqrt(2 * (1 - p_corr))
+        return distance
+    def pairwise_correlation(self, A, B):
+        am = A - np.mean(A, axis=0, keepdims=True)
+        bm = B - np.mean(B, axis=0, keepdims=True)
+        return am.T @ bm /  (np.sqrt(
+            np.sum(am**2, axis=0,
+                keepdims=True)).T * np.sqrt(
+            np.sum(bm**2, axis=0, keepdims=True)))
+    def calculate_distance_custom(self, corr1, corr2):
+        p_corr = self.pairwise_correlation(corr1,corr2)
         distance = np.sqrt(2 * (1 - p_corr))
         return distance

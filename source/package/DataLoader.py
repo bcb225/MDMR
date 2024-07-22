@@ -4,6 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import nibabel as nib
+import itertools
+from pathlib import Path
+import pandas as pd
 
 
 class DataLoader:
@@ -73,3 +76,27 @@ class ImagePlotter:
         new_img = nib.Nifti1Image(correlation_3d, affine=fmri.affine)
         plotting.plot_stat_map(new_img, title="Voxel 0 Temporal Correlation", display_mode='ortho')
         plt.show()
+
+class VoxelLoader:
+    def __init__(self, source_dir):
+        self.source_dir = Path(source_dir)
+        subfolders = [item.name for item in self.source_dir.iterdir() if item.is_dir()]
+        self.filtered_subfolders = [code for code in subfolders if code.startswith('sub-')]
+        
+    def get_subject_combination(self):
+        self.subject_combinations = list(itertools.combinations(self.filtered_subfolders, 2))
+        return self.subject_combinations
+    
+    def get_voxel_count(self):
+        subject_path = self.source_dir / self.filtered_subfolders[0]
+        if subject_path.exists() and subject_path.is_dir():
+            voxel_files = [file for file in subject_path.iterdir() if file.is_file()]
+            return len(voxel_files)
+        else:
+            return -1
+    
+    def load_voxel(self, subject_code, voxel_index):
+        voxel_path = self.source_dir / subject_code / f"voxel_{voxel_index}.txt"
+        voxel_data = np.loadtxt(voxel_path)
+        voxel_data = np.delete(voxel_data, voxel_index)
+        return voxel_data
