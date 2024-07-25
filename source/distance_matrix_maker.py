@@ -16,6 +16,10 @@ output_dir = Path("/home/changbae/fmri_project/MDMR/result/distance_matrix")
 output_dir.mkdir(parents=True, exist_ok=True) 
 
 for voxel_index in tqdm(range(voxel_count), desc="Processing voxels"):
+    # Check if the output file already exists
+    output_file = output_dir / f"voxel_{voxel_index}.csv"
+    if output_file.exists():
+        continue  # Skip this voxel index if the file already exists
     distances = []
     for subject_tuple in subject_combination_list:
         source_dir = Path("/home/changbae/fmri_project/MDMR/result/correlation_matrix")
@@ -40,5 +44,4 @@ for voxel_index in tqdm(range(voxel_count), desc="Processing voxels"):
         )
         distances.append([subject_1, subject_2, distance])
     df = pd.DataFrame(distances, columns=["subject_code_1", "subject_code_2", "distance"])
-    output_file = output_dir / f"voxel_{voxel_index}.csv"
     df.to_csv(output_file, index=False)
