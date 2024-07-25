@@ -68,7 +68,7 @@ def permutation_test(G, X, num_permutations=15000):
     return original_F_stat, p_value, permuted_F_stats
 
 # Usage
-distance_file_path = '/home/changbae/fmri_project/MDMR/result/distance_matrix/voxel_1300.csv'
+distance_file_path = '/home/changbae/fmri_project/MDMR/result/distance_matrix/voxel_4100.csv'
 predictor_file_path = '/home/changbae/fmri_project/MDMR/data/predictor_variable.csv'
 
 A, subject_to_index = calculate_distance_matrix(distance_file_path)
