@@ -52,7 +52,7 @@ def calculate_f_statistic(G, X):
     F_stat = num / denom
     return F_stat
 
-def permutation_test(G, X, num_permutations=5000):
+def permutation_test(G, X, num_permutations=15000):
     original_F_stat = calculate_f_statistic(G, X)
     permuted_F_stats = []
 
@@ -68,14 +68,14 @@ def permutation_test(G, X, num_permutations=5000):
     return original_F_stat, p_value, permuted_F_stats
 
 # Usage
-distance_file_path = '/home/changbae/fmri_project/MDMR/result/distance_matrix/voxel_118.csv'
+distance_file_path = '/home/changbae/fmri_project/MDMR/result/distance_matrix/voxel_1300.csv'
 predictor_file_path = '/home/changbae/fmri_project/MDMR/data/predictor_variable.csv'
 
 A, subject_to_index = calculate_distance_matrix(distance_file_path)
 G = calculate_gower_centered_matrix(A)
 X = load_design_matrix(predictor_file_path, subject_to_index)
-#original_F_stat, p_value, permuted_F_stats = permutation_test(G, X)
-original_F_stat = calculate_f_statistic(G, X)
+original_F_stat, p_value, permuted_F_stats = permutation_test(G, X)
+#original_F_stat = calculate_f_statistic(G, X)
 print(f"Original F Statistic: {original_F_stat}")
-#print(f"Permuted F Statistic: {permuted_F_stats}")
-#print(f"P-value: {p_value}")
+print(f"Permuted F Statistic: {permuted_F_stats}")
+print(f"P-value: {p_value}")
