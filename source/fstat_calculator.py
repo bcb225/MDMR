@@ -79,7 +79,7 @@ if __name__ == "__main__":
     parser.add_argument("--predictor", type=str, required=True, help="Predictor")
     args = parser.parse_args()
     
-    diatance_file_path = f"../toy_result/distance_matrix/voxel_{args.voxel_num}.csv"
+    diatance_file_path = f"../result/distance_matrix/voxel_{args.voxel_num}.csv"
     predictor_file_path = "../toy_result/participant_demo_clinical.csv"
     predictor = args.predictor
     A, subject_to_index = calculate_distance_matrix(diatance_file_path)

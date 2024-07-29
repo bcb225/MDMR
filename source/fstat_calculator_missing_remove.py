@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-
+from pathlib import Path
 ##Participant file에서 missing 된 값이 있으면 사후에 design matrix를 만들때 제거하고 만드는 방식.
 ##엄밀하지 않은 방식이기 때문에, 참고로만 사용해야 함.
 ##나중에는 관심이 있는 variable에 missing value가 있는 사람을 미리 design matrix를 만드는 파일에서 제거하고 분석을 진행해야 함.
@@ -48,7 +48,7 @@ def load_design_matrix(file_path, predictor, subject_to_index):
             X[i, 1] = row[predictor]
         else:
             missing_subjects.add(subject_code)
-            print(f"Subject {subject_code} not in voxel distance matrix!")
+            #print(f"Subject {subject_code} not in voxel distance matrix!")
     
     valid_indices = ~np.isnan(X).any(axis=1)
     X = X[valid_indices]
@@ -75,7 +75,7 @@ def permutation_test(G, X, num_permutations=15000):
     original_F_stat = calculate_f_statistic(G, X)
     permuted_F_stats = []
 
-    for _ in tqdm(range(num_permutations), desc="Permutations"):
+    for _ in range(num_permutations):
         permuted_X = np.copy(X)
         np.random.shuffle(permuted_X[:, 1])
         permuted_F_stat = calculate_f_statistic(G, permuted_X)
@@ -88,21 +88,29 @@ def permutation_test(G, X, num_permutations=15000):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run permutation test on fMRI data")
-    parser.add_argument("--voxel_num", type=str, required=True, help="Voxel")
+    #parser.add_argument("--voxel_num", type=str, required=True, help="Voxel")
     parser.add_argument("--predictor", type=str, required=True, help="Predictor")
     args = parser.parse_args()
     
-    distance_file_path = f"../toy_result/distance_matrix/voxel_{args.voxel_num}.csv"
+    #distance_file_path = f"../result/distance_matrix/voxel_{args.voxel_num}.csv"
+    distance_matrix_path = Path('../result/distance_matrix/')
+    distance_files = []
+    for file in distance_matrix_path.iterdir():
+        if file.is_file():  # 파일인 경우에만 리스트에 추가
+            distance_files.append(file.name)
+
     predictor_file_path = "../toy_result/participant_demo_clinical.csv"
     predictor = args.predictor
     
-    A, subject_to_index, subjects = calculate_distance_matrix(distance_file_path)
-    G = calculate_gower_centered_matrix(A)
-    X, valid_indices = load_design_matrix(predictor_file_path, predictor, subject_to_index)
-    
-    G_filtered, X_filtered = filter_matrices(G, X, valid_indices)
-    
-    original_F_stat, p_value, permuted_F_stats = permutation_test(G_filtered, X_filtered)
-    
-    print(f"Original F Statistic: {original_F_stat}")
-    print(f"P-value: {p_value}")
+    for distance_file in tqdm(distance_files):
+        A, subject_to_index, subjects = calculate_distance_matrix(f"../result/distance_matrix/{distance_file}")
+        G = calculate_gower_centered_matrix(A)
+        X, valid_indices = load_design_matrix(predictor_file_path, predictor, subject_to_index)
+        
+        G_filtered, X_filtered = filter_matrices(G, X, valid_indices)
+        
+        original_F_stat, p_value, permuted_F_stats = permutation_test(G_filtered, X_filtered)
+        if p_value <= 0.05:
+            print(distance_file)
+            print(f"Original F Statistic: {original_F_stat}")
+            print(f"P-value: {p_value}")
