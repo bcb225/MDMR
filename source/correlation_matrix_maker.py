@@ -12,7 +12,8 @@ def process_subject(subject_code):
     fmri = data_loader.load_fmri(subject_code=subject_code)
     masked_data = data_loader.apply_gray_matter_mask(fmri_img=fmri)
     nonzero_masked_data = data_loader.apply_common_nonzero_mask(masked_data=masked_data)
-
+    nonzero_coords = data_loader.get_nonzero_coords()
+    print(nonzero_coords)
     subject_dir = Path("/home/changbae/fmri_project/MDMR/result/correlation_matrix/") / subject_code
     subject_dir.mkdir(parents=True, exist_ok=True)
     
