@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from pathlib import Path
+import re
+import csv
 ##Participant file에서 missing 된 값이 있으면 사후에 design matrix를 만들때 제거하고 만드는 방식.
 ##엄밀하지 않은 방식이기 때문에, 참고로만 사용해야 함.
 ##나중에는 관심이 있는 variable에 missing value가 있는 사람을 미리 design matrix를 만드는 파일에서 제거하고 분석을 진행해야 함.
@@ -86,6 +88,35 @@ def permutation_test(G, X, num_permutations=15000):
 
     return original_F_stat, p_value, permuted_F_stats
 
+def extract_number(file_name):
+    match = re.search(r'\d+', file_name)
+    return int(match.group()) if match else -1
+
+def write_row(f_stat_path, data_list):
+    if not f_stat_path.exists():
+        # 파일 생성 및 헤더 작성
+        with f_stat_path.open(mode='w', newline='') as file:
+            writer = csv.writer(file)
+            # 헤더 작성
+            writer.writerow(['voxel', 'f_stat', 'p_val'])
+            # 데이터 작성
+            writer.writerow(data_list)
+    else: 
+        with f_stat_path.open(mode='a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(data_list)
+
+def get_last_voxel(f_stat_path):
+    if not f_stat_path.exists():
+        return 0
+    else: 
+        with f_stat_path.open(mode='r') as file:
+            reader = csv.reader(file)
+            all_rows = list(reader)
+            # 마지막 행 가져오기
+            last_row = all_rows[-1] if all_rows else None
+        return last_row[0]    
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run permutation test on fMRI data")
     #parser.add_argument("--voxel_num", type=str, required=True, help="Voxel")
@@ -101,16 +132,26 @@ if __name__ == "__main__":
 
     predictor_file_path = "../toy_result/participant_demo_clinical.csv"
     predictor = args.predictor
-    
-    for distance_file in tqdm(distance_files):
+
+    f_stat_path = Path(f"../result/fstat/{predictor}.csv")
+    distance_files.sort(key=extract_number)
+
+    last_voxel_num = int(get_last_voxel(f_stat_path))
+    print(f"Last Voxel #: {last_voxel_num}")
+    for distance_file in tqdm(distance_files[last_voxel_num+1:]):
+        #print(distance_file)
         A, subject_to_index, subjects = calculate_distance_matrix(f"../result/distance_matrix/{distance_file}")
         G = calculate_gower_centered_matrix(A)
         X, valid_indices = load_design_matrix(predictor_file_path, predictor, subject_to_index)
+
+        voxel_num = extract_number(distance_file)
         
         G_filtered, X_filtered = filter_matrices(G, X, valid_indices)
         
         original_F_stat, p_value, permuted_F_stats = permutation_test(G_filtered, X_filtered)
         if p_value <= 0.05:
-            print(distance_file)
+            print(voxel_num)
             print(f"Original F Statistic: {original_F_stat}")
             print(f"P-value: {p_value}")
+        write_row(f_stat_path, [voxel_num, original_F_stat, p_value])
+        
